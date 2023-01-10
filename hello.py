@@ -1,13 +1,14 @@
 import requests
 from bs4 import BeautifulSoup
 
+from pymongo import MongoClient
+client = MongoClient('mongodb+srv://sparta:test@cluster0.nxs4xsn.mongodb.net/Cluster0?retryWrites=true&w=majority')
+db = client.dbsparta
+
 headers = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36'}
 data = requests.get('https://movie.naver.com/movie/sdb/rank/rmovie.naver?sel=pnt&date=20210829',headers=headers)
 
 soup = BeautifulSoup(data.text, 'html.parser')
-
-#old_content > table > tbody > tr:nth-child(3) > td.title > div > a
-#old_content > table > tbody > tr:nth-child(4) > td.title > div > a
 
 movies = soup.select('#old_content > table > tbody > tr')
 
@@ -16,9 +17,10 @@ for movie in movies:
     if a is not None:
         title = a.text
         rank = movie.select_one('td:nth-child(1) > img')['alt']
-        # #old_content > table > tbody > tr:nth-child(2) > td:nth-child(1) > img
         star = movie.select_one('td.point').text
-        # old_content > table > tbody > tr:nth-child(2) > td.point
-        # tr 까지는 가지고 왔기 때문에 tr앞은 지운다
-        print(rank, star, title)
-        # 프린트로 출력시 추출이 필요한 값을 볼 수 있음
+        doc = {
+            'title':title,
+            'rank':rank,
+            'star':star
+        }
+        db.movies.insert_one(doc)
